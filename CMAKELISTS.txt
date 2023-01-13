@@ -1,0 +1,85 @@
+# Initialize the CMake version
+cmake_minimum_required(VERSION 3.21)
+
+# Define the build type.
+# Build types are: DEBUG, PERFDEBUG, RELEASE
+set(PROJECT_BUILD_TYPE "DEBUG")
+
+# Set the base properties for the project and define the project.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+project(managekinetic)
+
+# Define the executable and source files.
+add_executable(managekinetic WIN32
+
+./src/main.cpp
+./src/main.h
+
+./src/managekinetic/primitives.h
+
+./src/managekinetic/async.cpp
+./src/managekinetic/async.h
+./src/managekinetic/commandline.cpp
+./src/managekinetic/commandline.h
+./src/managekinetic/mappingtable.cpp
+./src/managekinetic/mappingtable.h
+./src/managekinetic/uicomponent.cpp
+./src/managekinetic/uicomponent.h
+./src/managekinetic/tableviewer.cpp
+./src/managekinetic/tableviewer.h
+
+./src/platform/fileio_win32.cpp
+./src/platform/fileio_win32.h
+./src/platform/memory_win32.cpp
+./src/platform/memory_win32.h
+./src/platform/benchmark_win32.cpp
+./src/platform/benchmark_win32.h
+
+./src/vendor/DearImGUI/backends/imgui_impl_win32.cpp
+./src/vendor/DearImGUI/backends/imgui_impl_win32.h
+./src/vendor/DearImGUI/backends/imgui_impl_opengl3.cpp
+./src/vendor/DearImGUI/backends/imgui_impl_opengl3.h
+./src/vendor/DearImGUI/misc/cpp/imgui_stdlib.cpp
+./src/vendor/DearImGUI/misc/cpp/imgui_stdlib.h
+./src/vendor/DearImGUI/imgui_demo.cpp
+./src/vendor/DearImGUI/imgui.cpp
+./src/vendor/DearImGUI/imgui.h
+./src/vendor/DearImGUI/imconfig.h
+./src/vendor/DearImGUI/imgui_draw.cpp
+./src/vendor/DearImGUI/imgui_internal.h
+./src/vendor/DearImGUI/imgui_tables.cpp
+./src/vendor/DearImGUI/imgui_widgets.cpp
+./src/vendor/DearImGUI/imstb_rectpack.h
+./src/vendor/DearImGUI/imstb_textedit.h
+./src/vendor/DearImGUI/imstb_truetype.h
+
+)
+
+# Add additional subdirectories.
+add_subdirectory(src/vendor/OpenXLSX)
+
+# Look for OpenGL
+find_package(OpenGL)
+if (OPENGL_FOUND)
+	message("OpenGL Found.")
+	include_directories(${OPENGL_INCLUDE_DIR})
+endif (OPENGL_FOUND)
+
+# Apply the compile options.
+if (MSVC)
+	add_compile_options(${COMPILE_OPTIONS})
+else ()
+	add_compile_options(${COMPILE_OPTIONS})
+endif ()
+
+# Set Visual Studio's startup project to the base project.
+if (MSVC)
+	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT managekinetic)
+endif ()
+
+# Allow absolute referencing for project files located in ./src
+target_include_directories(managekinetic PUBLIC ./src)
+
+# Link external vendor libraries.
+target_link_libraries(managekinetic  OpenXLSX::OpenXLSX ${OPENGL_LIBRARIES})

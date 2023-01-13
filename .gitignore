@@ -1,0 +1,11 @@
+.vscode
+.vs
+
+build/
+tables/
+
+*.xlsx
+*.exe
+**/*.xlsx
+
+imgui.ini
