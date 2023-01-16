@@ -148,6 +148,124 @@ performOpenFile()
 }
 
 // -----------------------------------------------------------------------------
+// Custom Export Preview Table
+// -----------------------------------------------------------------------------
+
+class ExportPreviewTable : public tableviewer
+{
+
+	public:
+		ExportPreviewTable(std::string name) : tableviewer(name)
+		{
+
+		}
+
+	protected:
+		inline virtual void
+		headerProcedure(ui32 columnOffset, ui32 colCount) override
+		{
+			// Get the current document and table.
+			document& currentDocument = *application::get().currentDocument;
+			tablemap& table = currentDocument.getTable();
+
+			if (this->isRowNumbersShown())
+				ImGui::TableSetupColumn("");
+
+			ui32 columnsShown = 0;
+
+			for (ui32 cIndex = columnOffset; cIndex < table.getMappedColumns().size(); ++cIndex)
+			{
+				ImGui::TableSetupColumn(table.getMappedColumns()[cIndex].export_alias.c_str());
+				if (++columnsShown >= colCount - 1) break;
+			}
+
+			ImGui::TableHeadersRow();
+		}
+
+		inline virtual void
+		iterationProcedure(ui64 index, ui32 columnOffset, ui32 colCount) override
+		{
+			// Get the current document and table.
+			document& currentDocument = *application::get().currentDocument;
+			tablemap& table = currentDocument.getTable();
+			std::vector<column_map>& exportMap = table.getMappedColumns();
+
+			record& currentRecord = table[index];
+
+			// Show the y-axis header as needed.
+			if (this->isRowNumbersShown())
+			{
+				ImGui::TableSetColumnIndex(0);
+				ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg,
+					ImGui::ColorConvertFloat4ToU32({.20f, .20f, .20f, 1.0f}));
+				ImGui::TextColored({.8f, .8f, .8f, 1.0f}, "Row #%d", index + 1);
+			}
+
+			ui32 cc = (this->isRowNumbersShown()) ? colCount - 1 : colCount;
+			for (ui32 cIndex = 0; cIndex < cc; ++cIndex)
+			{
+
+				ImGui::TableSetColumnIndex(cIndex + 1);
+				field* f = currentRecord[exportMap[cIndex].column_index];
+				if (exportMap[cIndex].all_multivalues)
+				{
+					ImGui::Text(f->get(exportMap[cIndex].multivalue_delim).c_str());
+				}
+				else
+				{
+					ImGui::Text(f->get(exportMap[cIndex].multivalue_index - 1).c_str());
+				}
+
+			}
+
+#if 0
+			ui32 nextColumn = (this->isRowNumbersShown()) ? 1 : 0;
+			ImGui::TableSetColumnIndex(nextColumn);
+			ImGui::Text(currentRecord[0]->get(0).c_str());
+			ImGui::TableSetColumnIndex(nextColumn+1);
+			field* currentField = currentRecord[colIndex];
+			if (useAllMulti == false)
+			{
+				if (currentField != nullptr)
+				{
+					ImGui::Text(currentField->get(this->multiIndex).c_str());
+				}
+			}
+			else
+			{
+				if (currentField != nullptr)
+				{
+					ImGui::Text(currentField->get(delim).c_str());
+				}
+			}
+#endif
+
+#if 0
+			ui32 cc = (this->isRowNumbersShown()) ? colCount - 1 : colCount;
+			for (ui32 cIndex = 0; cIndex < cc; ++cIndex)
+			{
+
+				// Since we are iterating based on the number of columns, we need to
+				// manually calculate the column.
+				field* currentField = currentRecord[columnOffset + cIndex];
+
+
+				if (ImGui::TableSetColumnIndex(cIndex + 1)
+					&& currentField != nullptr)
+				{
+					std::string outputString = "";
+
+					if (currentField != nullptr)
+						outputString = currentField->get("; ");
+					ImGui::Text("%s", outputString.c_str());
+				}
+
+			}
+#endif
+		}
+};
+
+// -----------------------------------------------------------------------------
 // Custom Mapping Window Table
 // -----------------------------------------------------------------------------
 
@@ -264,24 +382,25 @@ class MappingWindow : public GUIWindow
 		virtual bool onClose() 		override;
 
 	private:
-		ui64 columnIndexSelected = -1;
-		i32 multivalueSelected = 1;
-		bool multivalueAll = false;
-		std::string mapName = "";
-		std::string multivalueDelimiter = ",";
-
+		column_map map;
 		MappingWindowPreviewTable previewTable;
 };
 
 MappingWindow::
 MappingWindow()
 	: GUIWindow(true), previewTable("Preview Table")
-{ }
+{
+	map.column_index = -1;
+	map.all_multivalues = false;
+}
 
 MappingWindow::
 MappingWindow(ui64 selectedIndex)
-	: GUIWindow(true), columnIndexSelected(selectedIndex), previewTable("Preview Table")
-{ }
+	: GUIWindow(true), previewTable("Preview Table")
+{
+	map.column_index = selectedIndex;
+	map.all_multivalues = false;
+}
 
 MappingWindow::
 ~MappingWindow()
@@ -347,9 +466,9 @@ onDisplay()
 #endif
 
 	std::string selectedColumnName = "None Selected";
-	if (this->columnIndexSelected != -1)
+	if (this->map.column_index != -1)
 		selectedColumnName = currentDocument.getTable()
-			.getColumnNames()[this->columnIndexSelected];
+			.getColumnNames()[this->map.column_index];
 
 	std::stringstream listboxHeader = {};
 	listboxHeader << "Currently Selected Column: " << selectedColumnName;
@@ -362,9 +481,9 @@ onDisplay()
 		std::vector<std::string>& columnNames = currentDocument.getTable().getColumnNames();
 		for (ui32 mapIndex = 0; mapIndex < columnNames.size(); ++mapIndex)
 		{
-			bool currentlySelected = (this->columnIndexSelected == mapIndex);
+			bool currentlySelected = (this->map.column_index == mapIndex);
 			if (ImGui::Selectable(columnNames[mapIndex].c_str(), currentlySelected))
-				this->columnIndexSelected = mapIndex;
+				this->map.column_index = mapIndex;
 		}
 
 		ImGui::EndListBox();
@@ -377,28 +496,28 @@ onDisplay()
 	// Table Mapping Controls
 	// -------------------------------------------------------------------------
 
-	ImGui::InputText("Alias Name", &this->mapName);
+	ImGui::InputText("Alias Name", &this->map.export_alias);
 	ImGui::Spacing();
 
-	ImGui::Checkbox("Use all Multivalues?", &this->multivalueAll);
+	ImGui::Checkbox("Use all Multivalues?", &this->map.all_multivalues);
 	ImGui::Spacing();
 
-	if (this->multivalueAll == false) ImGui::BeginDisabled();
-	ImGui::InputText("Multivalue Delimiter", &this->multivalueDelimiter);
-	if (this->multivalueAll == false) ImGui::EndDisabled();
+	if (this->map.all_multivalues == false) ImGui::BeginDisabled();
+	ImGui::InputText("Multivalue Delimiter", &this->map.multivalue_delim);
+	if (this->map.all_multivalues == false) ImGui::EndDisabled();
 	
 
-	if (this->multivalueAll == true) ImGui::BeginDisabled();
-	ImGui::InputInt("Multivalue Index", &this->multivalueSelected, 1, 1);
-	if (this->multivalueAll == true) ImGui::EndDisabled();
+	if (this->map.all_multivalues == true) ImGui::BeginDisabled();
+	ImGui::InputInt("Multivalue Index", &this->map.multivalue_index, 1, 1);
+	if (this->map.all_multivalues == true) ImGui::EndDisabled();
 	ImGui::Spacing();
 
 	ImGui::Separator();
 	ImGui::Spacing();
 
 	// Clamp the multi value.
-	if (this->multivalueSelected < 1)
-		this->multivalueSelected = 1;
+	if (this->map.multivalue_index < 1)
+		this->map.multivalue_index = 1;
 
 	// -------------------------------------------------------------------------
 	// Show Data Preview
@@ -453,16 +572,16 @@ onDisplay()
 
 #endif
 
-	if (this->columnIndexSelected != -1)
+	if (this->map.multivalue_index != -1)
 	{
 		this->previewTable.setColumnStep(2);
 		this->previewTable.setPaginationStep(20);
 
-		this->previewTable.mapHeaderString = this->mapName;
-		this->previewTable.colIndex = this->columnIndexSelected;
-		this->previewTable.delim = this->multivalueDelimiter;
-		this->previewTable.multiIndex = this->multivalueSelected - 1;
-		this->previewTable.useAllMulti = this->multivalueAll;
+		this->previewTable.mapHeaderString = this->map.export_alias;
+		this->previewTable.colIndex = this->map.column_index;
+		this->previewTable.delim = this->map.multivalue_delim;
+		this->previewTable.multiIndex = this->map.multivalue_index - 1;
+		this->previewTable.useAllMulti = this->map.all_multivalues;
 
 		this->previewTable.render(currentDocument.getTable().count(), 2);
 
@@ -524,10 +643,20 @@ onDisplay()
 	ImGui::Text("Once saved, check the export preview tab.");
 	ImGui::Spacing();
 
+	bool saveDisabled = false;
+	if (this->map.export_alias.empty())
+	{
+		saveDisabled = true;
+		ImGui::BeginDisabled();
+	}
 	if (ImGui::Button("Save Map"))
 	{
-		// Perform some operation here.
+		currentDocument.lockTable();
+		currentDocument.getTable().getMappedColumns().push_back(this->map);
+		currentDocument.unlockTable();
+		stayOpen = false; // Saved, we can close this window.
 	}
+	if (saveDisabled == true) ImGui::EndDisabled();
 
 	ImGui::End();
 
@@ -700,13 +829,16 @@ class MainWindow : public GUIWindow
 
 		void displayExportPreview();
 
+		void saveMappingSchema();
+		void loadMappingSchema();
+
 		tableviewer rawViewTable;
-		tableviewer rawViewTable2;
+		ExportPreviewTable exportPreview;
 
 };
 
 MainWindow::
-MainWindow() : GUIWindow(true), rawViewTable("Raw Import Data View"), rawViewTable2("Test")
+MainWindow() : GUIWindow(true), rawViewTable("Raw Import Data View"), exportPreview("Export Preview Table")
 { }
 
 MainWindow::
@@ -751,6 +883,9 @@ onDisplay()
 
 			if (ImGui::BeginTabItem("Imported Table Data View"))
 			{
+				ImGui::Text("Imported Table Data View Reference");
+				ImGui::Spacing();
+
 				if (currentDocument.isReady())
 					this->rawViewTable.render(currentDocument.getTable().count(),
 						currentDocument.getTable().columnsCount());
@@ -760,8 +895,8 @@ onDisplay()
 			if (ImGui::BeginTabItem("Export Preview"))
 			{
 				if (currentDocument.isReady())
-					this->rawViewTable2.render(currentDocument.getTable().count(),
-						currentDocument.getTable().columnsCount());
+					this->exportPreview.render(currentDocument.getTable().count(),
+						currentDocument.getTable().getMappedColumns().size());
 				ImGui::EndTabItem();
 			}
 
@@ -921,10 +1056,40 @@ displaySubmenuTableMapping()
 		if (ImGui::MenuItem("New Column Map"))
 			application::get().mappingWindows.push_back(std::make_unique<MappingWindow>());
 
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		if (ImGui::MenuItem("Save Tablemap Schema"))
+			this->saveMappingSchema();
+
+		if (ImGui::MenuItem("Load Tablemap Schema"))
+			this->loadMappingSchema();
+
 		ImGui::EndMenu();
 	}
 
 	if (mappingMenuDisabled == true) ImGui::EndDisabled();
+
+}
+
+void MainWindow::
+loadMappingSchema()
+{
+
+	printf("[ Main Thread ] : Loading mapping schema.\n");
+
+
+
+}
+
+void MainWindow::
+saveMappingSchema()
+{
+
+	printf("[ Main Thread ] : Saving mapping schema.\n");
+
+
 
 }
 
@@ -940,19 +1105,18 @@ displaySubmenuFile()
 		// -----------------------------------------------------------------
 
 		if (ImGui::MenuItem("Open File")) performOpenFile();
-		ImGui::Spacing();
 
 		// -----------------------------------------------------------------
 		// Close file dialogue will delete the document.
 		// -----------------------------------------------------------------
 
 		if (ImGui::MenuItem("Close File")) performCloseFile();
-		ImGui::Spacing();
 
 		// -----------------------------------------------------------------
 		// About window which displays information about the program.
 		// -----------------------------------------------------------------
 
+		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();
 		ImGui::SetNextWindowSize({300.0f, 300.0f}, ImGuiCond_Appearing);
@@ -1021,16 +1185,8 @@ displayMenubar()
 			}
 		}
 
-		// ---------------------------------------------------------------------
-		// File menu.
-		// ---------------------------------------------------------------------
 
 		this->displaySubmenuFile();
-
-		// ---------------------------------------------------------------------
-		// Table map menu.
-		// ---------------------------------------------------------------------
-
 		this->displaySubmenuTableMapping();
 
 		ImGui::EndMenuBar();

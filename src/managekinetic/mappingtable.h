@@ -237,6 +237,7 @@ class tablemap
 			{ return this->columns.size(); };
 
 		std::vector<std::string>& getColumnNames() { return this->columns; }
+		std::vector<column_map>& getMappedColumns() { return this->mapped_columns; }
 
 	protected:
 		const ui32 maxRecordsPerSubtable;

@@ -31,6 +31,9 @@ class document
 		inline bool isParsing() const { return this->parsingFlag; }
 		inline bool isReady() const { return this->readyFlag; }
 
+		inline bool isExportStarted() const { return this->exportStartFlag; }
+		inline bool isExportComplete() const { return this->exportCompleteFlag; }
+
 		std::vector<parseprogress> getParsingProgress();
 
 		//MappingTable* operator[](ui64 index) { return this->mappingTables[index]; }
@@ -46,6 +49,7 @@ class document
 
 	protected:
 		std::filesystem::path filepath;
+
 	private:
 		std::thread documentLoaderThread;
 
@@ -57,6 +61,9 @@ class document
 		std::atomic<bool> initializingFlag;
 		std::atomic<bool> parsingFlag;
 		std::atomic<bool> readyFlag;
+
+		std::atomic<bool> exportStartFlag;
+		std::atomic<bool> exportCompleteFlag;
 
 		std::mutex parsingProgressLock;
 		std::vector<parseprogress> parsingProgress;

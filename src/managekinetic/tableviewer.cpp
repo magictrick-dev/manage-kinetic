@@ -105,8 +105,8 @@ render(ui64 tableTotal, ui64 columnTotal)
 
 		i32 dcolOffset = (this->showRowNumbers) ? 2 : 1;
 		std::stringstream ccolss = {};
-		ccolss << "F" << this->cOffset << " - F" << (this->cOffset + columnsShown - dcolOffset)
-			<< " / " << columnTotal - 1;
+		ccolss << "F" << this->cOffset << " - F" << ((columnsShown <= 1) ? 0 : (this->cOffset + columnsShown - dcolOffset))
+			<< " / " << ((columnTotal == 0) ? 0 : columnTotal - 1);
 		ImGui::Text(ccolss.str().c_str());
 
 	// -------------------------------------------------------------------------
@@ -168,7 +168,7 @@ render(ui64 tableTotal, ui64 columnTotal)
 
 	if (ImGui::BeginTable(this->getUniqueElementName(this->tableName).c_str(), columnsShown,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollX |
-		ImGuiTableFlags_ScrollY))
+		ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable))
 	{
 		ui32 showCount = 0;
 		this->headerProcedure(this->cOffset, columnsShown);
@@ -221,6 +221,8 @@ iterationProcedure(ui64 index, ui32 columnOffset, ui32 colCount)
 		ImGui::TextColored({.8f, .8f, .8f, 1.0f}, "Row #%d", index + 1);
 	}
 
+	ui32 colh = -1;
+	bool isHovered = false;
 	ui32 cc = (this->showRowNumbers) ? colCount - 1 : colCount;
 	for (ui32 cIndex = 0; cIndex < cc; ++cIndex)
 	{
@@ -229,17 +231,28 @@ iterationProcedure(ui64 index, ui32 columnOffset, ui32 colCount)
 		// manually calculate the column.
 		field* currentField = currentRecord[columnOffset + cIndex];
 
+		if (ImGui::TableGetColumnFlags(cIndex) & ImGuiTableColumnFlags_IsHovered)
+		{
+			colh = cIndex + columnOffset;
+			isHovered = true;
+		}
+
+		if (isHovered)
+			ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg,
+				ImGui::ColorConvertFloat4ToU32({0.2f, 0.08f, 0.0f, 0.85f}));
 
 		if (ImGui::TableSetColumnIndex(cIndex + 1)
 			&& currentField != nullptr)
 		{
-			std::string outputString = "";
-
-			if (currentField != nullptr)
-				outputString = currentField->get("; ");
-			ImGui::Text("%s", outputString.c_str());
+			for (ui32 mvi = 0; mvi < currentField->valueCount(); ++mvi)
+				ImGui::Text(currentField->get(mvi).c_str());
 		}
 
+	}
+
+	if (isHovered == true && colh != -1 && ImGui::IsMouseReleased(1))
+	{
+		printf("[ Main Thread ] : Request to make new mapping window on column #%d\n", colh - 1);
 	}
 
 #if 0
@@ -290,8 +303,8 @@ headerProcedure(ui32 columnOffset, ui32 colCount)
 
 	for (ui32 cIndex = columnOffset; cIndex < headings.size(); ++cIndex)
 	{
-		ImGui::TableSetupColumn(headings[cIndex].c_str());
 		if (++columnsShown >= colCount - 1) break;
+		ImGui::TableSetupColumn(headings[cIndex].c_str());
 	}
 
 	ImGui::TableHeadersRow();
