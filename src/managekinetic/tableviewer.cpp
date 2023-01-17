@@ -221,7 +221,6 @@ iterationProcedure(ui64 index, ui32 columnOffset, ui32 colCount)
 		ImGui::TextColored({.8f, .8f, .8f, 1.0f}, "Row #%d", index + 1);
 	}
 
-	ui32 colh = -1;
 	bool isHovered = false;
 	ui32 cc = (this->showRowNumbers) ? colCount - 1 : colCount;
 	for (ui32 cIndex = 0; cIndex < cc; ++cIndex)
@@ -232,14 +231,7 @@ iterationProcedure(ui64 index, ui32 columnOffset, ui32 colCount)
 		field* currentField = currentRecord[columnOffset + cIndex];
 
 		if (ImGui::TableGetColumnFlags(cIndex) & ImGuiTableColumnFlags_IsHovered)
-		{
-			colh = cIndex + columnOffset;
 			isHovered = true;
-		}
-
-		if (isHovered)
-			ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg,
-				ImGui::ColorConvertFloat4ToU32({0.2f, 0.08f, 0.0f, 0.85f}));
 
 		if (ImGui::TableSetColumnIndex(cIndex + 1)
 			&& currentField != nullptr)
@@ -248,11 +240,6 @@ iterationProcedure(ui64 index, ui32 columnOffset, ui32 colCount)
 				ImGui::Text(currentField->get(mvi).c_str());
 		}
 
-	}
-
-	if (isHovered == true && colh != -1 && ImGui::IsMouseReleased(1))
-	{
-		printf("[ Main Thread ] : Request to make new mapping window on column #%d\n", colh - 1);
 	}
 
 #if 0

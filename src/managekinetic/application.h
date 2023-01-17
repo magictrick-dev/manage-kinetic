@@ -19,11 +19,19 @@ struct parseprogress
 	ui32 recordsTotal;
 };
 
+struct exportprogress
+{
+	ui32 recordsStored;
+	ui32 recordsTotal;
+};
+
 class document
 {
 	public:
 		document(std::filesystem::path path, ui32 maxRecordsPerDocument);
 		~document();
+
+		void beginExport(std::string filename);
 
 		std::string 	getFilename() const;
 
@@ -49,6 +57,15 @@ class document
 
 	protected:
 		std::filesystem::path filepath;
+		std::filesystem::path exportpath;
+
+	private:
+		std::thread documentExportThread;
+		void exportSubroutine();
+		void exportSubroutineCreateExcelDocument(ui64 workIndex);
+
+		std::vector<exportprogress> exportProgress;
+		std::mutex exportProgressLock;
 
 	private:
 		std::thread documentLoaderThread;
@@ -111,6 +128,7 @@ class application
 		// Windows
 		std::shared_ptr<GUIWindow> mainWindow;
 		std::shared_ptr<GUIWindow> parseWindow;
+		std::shared_ptr<GUIWindow> exportWindow;
 		std::vector<std::unique_ptr<GUIWindow>> mappingWindows;
 
 		// Application runtime parameters.

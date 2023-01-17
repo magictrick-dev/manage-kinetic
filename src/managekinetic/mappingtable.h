@@ -233,6 +233,12 @@ class tablemap
 
 		ui64 count() const;
 
+		ui64 subtableCount() const
+			{ return this->subtables.size(); }
+
+		std::vector<std::shared_ptr<subtable>> getSubtables()
+			{ return this->subtables; }
+
 		inline ui64 columnsCount() const
 			{ return this->columns.size(); };
 

@@ -26,6 +26,31 @@ sourceOpenFileDialogue(void* windowHandle)
 		return "";
 }
 
+std::string
+sourceSaveFileDialogue(void* windowHandle, const char* defaultExt, const char* filterPair)
+{
+
+	// Zero the buffer.
+	char filepathBuffer[260];
+	memset(filepathBuffer, 0x00, 260);
+
+	// Initialize the structure.
+	OPENFILENAMEA fileOpenResults 	= {};
+	fileOpenResults.lStructSize 	= sizeof(OPENFILENAMEA);
+	fileOpenResults.hwndOwner 		= *(HWND*)windowHandle;
+	fileOpenResults.lpstrFile 		= filepathBuffer;
+	fileOpenResults.nMaxFile 		= 260;
+	fileOpenResults.lpstrDefExt 	= defaultExt;
+	fileOpenResults.lpstrFilter 	= filterPair;
+
+	// Perform the action.
+	if (GetSaveFileNameA(&fileOpenResults))
+		return std::string(fileOpenResults.lpstrFile);
+	else
+		return "";
+
+}
+
 /**
  * Determines if a file exists.
  * 

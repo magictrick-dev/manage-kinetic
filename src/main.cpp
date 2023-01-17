@@ -119,6 +119,26 @@ performCloseFile()
 }
 
 void
+performSaveFile()
+{
+
+	std::string savepath = sourceSaveFileDialogue(&application::get().internal.windowHandle,
+		".xlsx", "Excel XLSX Document .xlsx\0*.xlsx\0\0");
+	if (!savepath.empty())
+	{
+		printf("[ Main Thread ] : Saving %s.\n", savepath.c_str());
+
+		if (application::get().currentDocument != nullptr && application::get().currentDocument->isReady())
+		{
+			application::get().currentDocument->beginExport(savepath);
+			application::get().exportWindow->open();
+		}
+
+	}
+
+}
+
+void
 performOpenFile()
 {
 	std::string filepath = sourceOpenFileDialogue(&application::get().internal.windowHandle);
@@ -392,6 +412,7 @@ MappingWindow()
 {
 	map.column_index = -1;
 	map.all_multivalues = false;
+	map.multivalue_index = 1;
 }
 
 MappingWindow::
@@ -400,6 +421,7 @@ MappingWindow(ui64 selectedIndex)
 {
 	map.column_index = selectedIndex;
 	map.all_multivalues = false;
+	map.multivalue_index = 1;
 }
 
 MappingWindow::
@@ -438,7 +460,7 @@ onDisplay()
 
 	bool stayOpen = true;
 
-	ImGui::SetNextWindowSize({600.0f, 800.0f}, ImGuiCond_Appearing);
+	ImGui::SetNextWindowSize({600.0f, 400.0f}, ImGuiCond_Appearing);
 	ImGui::Begin(mappingtoolname.str().c_str(), &stayOpen);
 
 	// -------------------------------------------------------------------------
@@ -659,6 +681,149 @@ onDisplay()
 	if (saveDisabled == true) ImGui::EndDisabled();
 
 	ImGui::End();
+
+	return stayOpen;
+
+}
+
+// -----------------------------------------------------------------------------
+// Export Window
+// -----------------------------------------------------------------------------
+
+class ExportWindow : public GUIWindow
+{
+	public:
+		ExportWindow();
+		~ExportWindow();
+
+	protected:
+		virtual bool onDisplay() 	override;
+		virtual bool onOpen() 		override;
+		virtual bool onClose() 		override;
+		virtual void onExit(bool) 	override;
+
+	private:
+		bool popupOpened = false;
+};
+
+ExportWindow::
+ExportWindow()
+{ }
+
+ExportWindow::
+~ExportWindow()
+{ }
+
+bool ExportWindow::
+onOpen()
+{
+	// Allow the window to open.
+	return true;
+}
+
+bool ExportWindow::
+onClose()
+{
+	// Allow the window to close.
+	popupOpened = false;
+	return true;
+}
+
+void ExportWindow::
+onExit(bool destroyed)
+{
+
+}
+
+bool ExportWindow::
+onDisplay()
+{
+
+	// -------------------------------------------------------------------------
+	// Ensure that there is a valid document.
+	// -------------------------------------------------------------------------
+	
+	if (application::get().currentDocument == nullptr)
+		return false;
+
+	document& currentDocument = *application::get().currentDocument;
+
+
+	// -------------------------------------------------------------------------
+	// Parsing Progress Display
+	// -------------------------------------------------------------------------
+	
+	// Used to determine if the window should stay open or closed.
+	bool stayOpen = true;
+
+	// Disallow the closing of the window if the document hasn't finished loading.
+	bool* windowCloseButton = nullptr;
+	if (currentDocument.isExportComplete()) windowCloseButton = &stayOpen;
+
+	if (this->popupOpened == false)
+	{
+		ImGui::OpenPopup("Export Progress");
+		this->popupOpened = true;
+	}
+
+	//ImGui::SetNextWindowSize({0, 0}, ImGuiCond_Always);
+	if (ImGui::BeginPopupModal("Export Progress", windowCloseButton, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+#if 0
+		ImGui::Text("Parsing %s, please wait as this may take awhile.",
+			currentDocument.getFilename().c_str());
+		ImGui::Spacing();
+		ImGui::Separator();
+
+		auto pprog = currentDocument.getParsingProgress();
+		for (ui32 progressIndex = 0; progressIndex < pprog.size(); ++progressIndex)
+		{
+			parseprogress& cprog = pprog[progressIndex];
+			r32 pfloat = (r32)cprog.recordsProcessed / (r32)cprog.recordsTotal;
+			r32 perc = (pfloat * 100.0f);
+
+			std::stringstream percstr = {};
+			percstr << std::fixed << std::setprecision(0);
+			if (pfloat > .98)
+				percstr << "Done!";
+			else
+				percstr << perc << "%";
+
+			ImGui::Spacing();
+			ImGui::Text("Parsing Subtable: %d", progressIndex + 1);
+			ImGui::Spacing();
+			ImGui::ProgressBar(pfloat, {}, percstr.str().c_str());
+			ImGui::SameLine();
+			ImGui::Text("%d / %d \n", cprog.recordsProcessed, cprog.recordsTotal);
+			ImGui::Spacing();
+		}
+#endif
+
+		ImGui::Separator();
+
+		// -------------------------------------------------------------------------
+		// Close Button
+		// -------------------------------------------------------------------------
+
+		// Disallow the use of the vlose button if we aren't allowed to close the
+		// window.
+		if (windowCloseButton == nullptr) ImGui::BeginDisabled();
+		ImGui::Spacing();
+		if (ImGui::Button("Close Window"))
+			stayOpen = false;
+
+		if (windowCloseButton == nullptr)
+		{
+			ImGui::SameLine();
+			ImGui::Text("Please wait...");
+			ImGui::EndDisabled();
+		}
+
+		ImGui::EndPopup();
+	}
+
+
+	
 
 	return stayOpen;
 
@@ -1100,17 +1265,23 @@ displaySubmenuFile()
 	if (ImGui::BeginMenu("File", true))
 	{
 
-		// -----------------------------------------------------------------
-		// Open file dialogue will create a new document to work with.
-		// -----------------------------------------------------------------
-
 		if (ImGui::MenuItem("Open File")) performOpenFile();
 
-		// -----------------------------------------------------------------
-		// Close file dialogue will delete the document.
-		// -----------------------------------------------------------------
-
 		if (ImGui::MenuItem("Close File")) performCloseFile();
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		bool saveDisabled = false;
+		if (application::get().currentDocument == nullptr || (application::get().currentDocument != nullptr &&
+			application::get().currentDocument->isReady() &&
+			application::get().currentDocument->getTable().getMappedColumns().size() == 0))
+				saveDisabled = true;
+
+		if (saveDisabled) ImGui::BeginDisabled();
+		if (ImGui::MenuItem("Export As")) performSaveFile();
+		if (saveDisabled) ImGui::EndDisabled();
 
 		// -----------------------------------------------------------------
 		// About window which displays information about the program.
@@ -1218,6 +1389,53 @@ getParsingProgress()
 	prog = this->parsingProgress;
 	this->parsingProgressLock.unlock();
 	return prog;
+}
+
+void document::
+beginExport(std::string filepath)
+{
+	this->exportpath = filepath;
+	this->documentExportThread = std::thread(&document::exportSubroutine, this);
+	this->exportStartFlag = true;
+	this->documentExportThread.detach();
+}
+
+void document::
+exportSubroutine()
+{
+
+	printf("[ Export Subroutine Thread ] : Exporting to %s\n", this->exportpath.string().c_str());
+
+	// Setup the export process.
+	tablemap& table = application::get().currentDocument->getTable();
+	this->exportProgressLock.lock();
+	for (ui64 p = 0; p < table.subtableCount(); ++p)
+		this->exportProgress.push_back({});
+	this->exportProgressLock.unlock();
+
+	std::vector<std::thread> worker_threads;
+	for (ui64 t = 0; t < table.subtableCount(); ++t)
+		worker_threads.push_back(std::thread(&document::exportSubroutineCreateExcelDocument,
+			this, t));
+
+	for (ui64 t = 0; t < worker_threads.size(); ++t)
+		if (worker_threads[t].joinable())
+			worker_threads[t].join();
+
+	printf("[ Export Subroutine Thread ] : Export complete.\n");
+	this->exportCompleteFlag = true;
+
+}
+
+void document::
+exportSubroutineCreateExcelDocument(ui64 workIndex)
+{
+
+	printf("[ Export Subroutine Worker #%lld ] : Working subtable index %lld\n",
+		workIndex, workIndex);
+
+	printf("[ Export Subroutine Worker #%lld ] : Worker export complete.\n", workIndex);
+
 }
 
 void document::
@@ -1922,6 +2140,9 @@ RenderFrame(HWND windowHandle, HDC OpenGLDeviceContext, HGLRC OpenGLRenderContex
 	// Show the parsing window.
 	application::get().parseWindow->display();
 
+	// Show the export window.
+	application::get().exportWindow->display();
+
 	// Display all the mapping windows currently open.
 	for (std::unique_ptr<GUIWindow>& currentMappingWindow : application::get().mappingWindows)
 		currentMappingWindow->display();
@@ -2208,6 +2429,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, LPSTR commandline, i32 comm
 	// -------------------------------------------------------------------------
 
 	application::get().parseWindow = std::make_shared<ParsingWindow>();
+	application::get().exportWindow = std::make_shared<ExportWindow>();
 	application::get().mainWindow = std::make_shared<MainWindow>();
 
 	// -------------------------------------------------------------------------
