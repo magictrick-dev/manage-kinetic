@@ -1434,6 +1434,79 @@ exportSubroutineCreateExcelDocument(ui64 workIndex)
 	printf("[ Export Subroutine Worker #%lld ] : Working subtable index %lld\n",
 		workIndex, workIndex);
 
+	// -------------------------------------------------------------------------
+	// Get the path.
+	// -------------------------------------------------------------------------
+
+	std::filesystem::path root_path = this->exportpath;
+	std::stringstream fpath = {};
+	std::filesystem::path base_name = root_path.filename().replace_extension("");
+	std::stringstream fname = {};
+	fname << base_name.string() << "_" << workIndex + 1 << root_path.extension().string();
+	root_path.replace_filename(fname.str());
+	printf("[ Export Subroutine Worker %lld ] : Exporting to %s\n", workIndex, root_path.string().c_str());
+
+	// -------------------------------------------------------------------------
+	// Once we have the path, we can create the excel document.
+	// -------------------------------------------------------------------------
+
+	OpenXLSX::XLDocument exceldoc;
+	exceldoc.create(root_path.string());
+	if (!exceldoc.isOpen())
+	{
+		printf("[ Export Subroutine Worker %lld ] : Unable to expor to %s\n", workIndex,
+			root_path.string().c_str());
+		return;
+	}
+	OpenXLSX::XLWorksheet excelsheet = exceldoc.workbook().worksheet("Sheet1");
+
+	// -------------------------------------------------------------------------
+	// Dump the contents of the subtable to the sheet.
+	// -------------------------------------------------------------------------
+
+
+	// Get the subtable. Lock to ensure non-compete with other threads.
+	application::get().currentDocument->lockTable();
+	tablemap& table = application::get().currentDocument->getTable();
+	std::shared_ptr<subtable> currentSubtable = application::get().currentDocument->getTable()
+		.getSubtables()[workIndex];
+	std::vector<record>& subrecords = currentSubtable->getRecords();
+	std::vector<column_map> maps = table.getMappedColumns();
+	application::get().currentDocument->unlockTable();
+
+	// Label each of the column headers.
+	for (ui64 colh = 0; colh < maps.size(); ++colh)
+	{
+		excelsheet.cell(1, colh + 1).value() = maps[colh].export_alias;
+	}
+
+	// Dump each row. Offset the row by 1 when inserting values to accomodate the
+	// headers.
+	for (ui64 row = 0; row < currentSubtable->size(); ++row)
+	{
+		record& currentRecord = subrecords[row];
+		for (ui64 col = 0; col < maps.size(); ++col)
+		{
+			field* currentField = currentRecord[maps[col].column_index];
+			if (currentField != nullptr)
+			{
+				if (maps[col].all_multivalues == true)
+				{
+					excelsheet.cell(row + 2, col + 1).value() = 
+						currentField->get(maps[col].multivalue_delim);
+				}
+				else
+				{
+					excelsheet.cell(row + 2, col + 1).value() =
+						currentField->get(maps[col].multivalue_index - 1);
+				}
+			}
+		}
+	}
+
+	// Once dumped, save, and exit.
+	exceldoc.save();
+
 	printf("[ Export Subroutine Worker #%lld ] : Worker export complete.\n", workIndex);
 
 }

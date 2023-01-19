@@ -195,6 +195,9 @@ class subtable
 	
 		inline ui64 size() const { return this->records.size(); };
 
+		inline std::vector<record>& getRecords()
+			{ return this->records; };
+
 		record& create();
 
 	protected:

@@ -82,4 +82,4 @@ endif ()
 target_include_directories(managekinetic PUBLIC ./src)
 
 # Link external vendor libraries.
-target_link_libraries(managekinetic  OpenXLSX::OpenXLSX ${OPENGL_LIBRARIES})
+target_link_libraries(managekinetic OpenXLSX::OpenXLSX ${OPENGL_LIBRARIES})
