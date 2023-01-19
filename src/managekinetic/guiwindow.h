@@ -1,5 +1,5 @@
-#ifndef MANAGE_KINETIC_COMPONENT_H
-#define MANAGE_KINETIC_COMPONENT_H
+#ifndef MANAGEKINETIC_GUIWINDOW_H
+#define MANAGEKINETIC_GUIWINDOW_H
 
 #include <managekinetic/primitives.h>
 #include <vendor/DearImGUI/imgui.h>
