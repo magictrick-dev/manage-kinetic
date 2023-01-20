@@ -7,6 +7,20 @@
  * 
  * By Chris DeJong, 12/28/2022
  * -----------------------------------------------------------------------------
+ * 
+ * 
+ * 
+ * 
+ * -----------------------------------------------------------------------------
+ * Todos   &   Bugs
+ * -----------------------------------------------------------------------------
+ * 		* Implement saving/loading maps. Serialize the structure.
+ * 		* Implement editor of current maps.
+ * 		* Fix race condition bug on columns being appended. (Happens rarely)
+ * 
+ * 		* Optionally allow for exclusion rules to exclude records from export.
+ * 		* Optionally implement procedures to remap field data during export.
+ * -----------------------------------------------------------------------------
  */
 
 // Bring in platform system headers.
@@ -174,6 +188,10 @@ WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, LPSTR commandline, i32 comm
 	// -------------------------------------------------------------------------
 	// Allocate a Console for Output
 	// -------------------------------------------------------------------------
+	
+	// Console allocation is only useful for debugging and otherwise removed when
+	// building for release.
+#if defined(BTYPEDEBUG)
 	FreeConsole();
 	if (AllocConsole())
 	{
@@ -195,6 +213,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, LPSTR commandline, i32 comm
 		// Ensure that we are running a console at startup.
 		return -1;
 	}
+#endif
 
 	// -------------------------------------------------------------------------
 	// Initialize the Win32 Window

@@ -48,6 +48,7 @@ class document
 		inline bool isExportComplete() const { return this->exportCompleteFlag; }
 
 		std::vector<parseprogress> getParsingProgress();
+		std::vector<exportprogress> getExportProgress();
 
 		//MappingTable* operator[](ui64 index) { return this->mappingTables[index]; }
 		//ui64 mappingTableCount() const { return this->mappingTables.size(); }

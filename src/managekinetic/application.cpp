@@ -70,6 +70,16 @@ document(std::filesystem::path filepath, ui32 maxRecordsPerDocument)
 	this->documentLoaderThread.detach();
 }
 
+std::vector<exportprogress> document::
+getExportProgress()
+{
+	std::vector<exportprogress> prog;
+	this->exportProgressLock.lock();
+	prog = this->exportProgress;
+	this->exportProgressLock.unlock();
+	return prog;
+}
+
 std::vector<parseprogress> document::
 getParsingProgress()
 {
@@ -169,6 +179,13 @@ exportSubroutineCreateExcelDocument(ui64 workIndex)
 		excelsheet.cell(1, colh + 1).value() = maps[colh].export_alias;
 	}
 
+	// Set the export progress information.
+	application::get().currentDocument->exportProgressLock.lock();
+	exportprogress& prog = application::get().currentDocument->exportProgress[workIndex];
+	application::get().currentDocument->exportProgressLock.unlock();
+	prog.recordsStored = 0;
+	prog.recordsTotal = subrecords.size();
+
 	// Dump each row. Offset the row by 1 when inserting values to accomodate the
 	// headers.
 	for (ui64 row = 0; row < currentSubtable->size(); ++row)
@@ -191,6 +208,10 @@ exportSubroutineCreateExcelDocument(ui64 workIndex)
 				}
 			}
 		}
+
+		// Update the progress.
+		prog.recordsStored++;
+
 	}
 
 	// Once dumped, save, and exit.

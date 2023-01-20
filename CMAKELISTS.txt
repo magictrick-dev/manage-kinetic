@@ -10,15 +10,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 project(managekinetic)
 
-# Define the buildtype.
-if (BUILDTYPE_RELEASE)
-	message("-- [ Config ] Buildtype is release mode.")
-	add_compile_definitions(BUILDTYPE_RELEASE)
-else()
-	message("-- [ Config ] Buildtype is debug mode.")
-	add_compile_definitions(BUILDTYPE_DEBUG)
-endif()
-
 # Define the executable and source files.
 add_executable(managekinetic WIN32
 
@@ -75,6 +66,19 @@ add_executable(managekinetic WIN32
 ./src/vendor/DearImGUI/imstb_truetype.h
 
 )
+
+# Define the buildtype.
+if (BTR)
+	message("-- [ Config ] Buildtype is release mode.")
+	target_compile_definitions(managekinetic PRIVATE BTYPERELEASE=1)
+else()
+	message("-- [ Config ] Buildtype is debug mode.")
+	target_compile_definitions(managekinetic PRIVATE BTYPEDEBUG=1)
+endif()
+
+# Define some application constants.
+add_compile_definitions(LASTRELEASE="1/19/2022")
+add_compile_definitions(BUILDVERSION="0.4.0i")
 
 # Add additional subdirectories.
 add_subdirectory(src/vendor/OpenXLSX)
