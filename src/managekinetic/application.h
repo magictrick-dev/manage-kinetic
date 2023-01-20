@@ -7,7 +7,12 @@
 #include <windows.h>
 #include <managekinetic/primitives.h>
 #include <managekinetic/mappingtable.h>
-#include <managekinetic/uicomponent.h>
+#include <managekinetic/guiwindow.h>
+
+#define MULTIVALUE_SEPERATOR_UNSIGNED 	253
+#define MULTIVALUE_SEPERATOR_SIGNED 	-3
+#define MULTIVALUE_FIELD_DELIMITER 		'~'
+#define ROW_FIELD_DELIMITER 			';'
 
 // Defines all the work that needs to be done.
 typedef std::vector<std::string> UnprocessedTable;
@@ -43,6 +48,7 @@ class document
 		inline bool isExportComplete() const { return this->exportCompleteFlag; }
 
 		std::vector<parseprogress> getParsingProgress();
+		std::vector<exportprogress> getExportProgress();
 
 		//MappingTable* operator[](ui64 index) { return this->mappingTables[index]; }
 		//ui64 mappingTableCount() const { return this->mappingTables.size(); }
@@ -50,10 +56,6 @@ class document
 		tablemap& 	getTable() { return this->table; };
 		void 		lockTable() { this->tableLock.lock(); }
 		void 		unlockTable() { this->tableLock.unlock(); }
-
-
-	public:
-		i32 currentPreviewPage = 0;
 
 	protected:
 		std::filesystem::path filepath;

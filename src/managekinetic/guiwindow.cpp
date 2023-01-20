@@ -1,4 +1,4 @@
-#include <managekinetic/uicomponent.h>
+#include <managekinetic/guiwindow.h>
 
 GUIWindow::
 GUIWindow()

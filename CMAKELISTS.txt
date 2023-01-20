@@ -18,16 +18,27 @@ add_executable(managekinetic WIN32
 
 ./src/managekinetic/primitives.h
 
+./src/managekinetic/application.cpp
+./src/managekinetic/application.h
 ./src/managekinetic/async.cpp
 ./src/managekinetic/async.h
 ./src/managekinetic/commandline.cpp
 ./src/managekinetic/commandline.h
 ./src/managekinetic/mappingtable.cpp
 ./src/managekinetic/mappingtable.h
-./src/managekinetic/uicomponent.cpp
-./src/managekinetic/uicomponent.h
+./src/managekinetic/guiwindow.cpp
+./src/managekinetic/guiwindow.h
 ./src/managekinetic/tableviewer.cpp
 ./src/managekinetic/tableviewer.h
+
+./src/managekinetic/GUIwindows/main_window.cpp
+./src/managekinetic/GUIwindows/main_window.h
+./src/managekinetic/GUIwindows/mapping_window.cpp
+./src/managekinetic/GUIwindows/mapping_window.h
+./src/managekinetic/GUIwindows/export_progress_window.cpp
+./src/managekinetic/GUIwindows/export_progress_window.h
+./src/managekinetic/GUIwindows/parse_progress_window.cpp
+./src/managekinetic/GUIwindows/parse_progress_window.h
 
 ./src/platform/fileio_win32.cpp
 ./src/platform/fileio_win32.h
@@ -56,13 +67,26 @@ add_executable(managekinetic WIN32
 
 )
 
+# Define the buildtype.
+if (BTR)
+	message("-- [ Config ] Buildtype is release mode.")
+	target_compile_definitions(managekinetic PRIVATE BTYPERELEASE=1)
+else()
+	message("-- [ Config ] Buildtype is debug mode.")
+	target_compile_definitions(managekinetic PRIVATE BTYPEDEBUG=1)
+endif()
+
+# Define some application constants.
+add_compile_definitions(LASTRELEASE="1/19/2022")
+add_compile_definitions(BUILDVERSION="0.4.0i")
+
 # Add additional subdirectories.
 add_subdirectory(src/vendor/OpenXLSX)
 
 # Look for OpenGL
 find_package(OpenGL)
 if (OPENGL_FOUND)
-	message("OpenGL Found.")
+	message("-- [ Config ] OpenGL Found.")
 	include_directories(${OPENGL_INCLUDE_DIR})
 endif (OPENGL_FOUND)
 
@@ -76,6 +100,7 @@ endif ()
 # Set Visual Studio's startup project to the base project.
 if (MSVC)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT managekinetic)
+	target_compile_options(managekinetic PRIVATE "/MP")
 endif ()
 
 # Allow absolute referencing for project files located in ./src
