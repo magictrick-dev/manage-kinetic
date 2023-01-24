@@ -5,6 +5,8 @@ using Microsoft Excel as the transport layer.
 
 ## Using Manage Kinetic
 
+### Loading Tables
+
 In order to use Manage Kinetic, you must first have a delimited data source. This
 source file can be defined to use any delimiter as long as the delimiter settings
 match the ones defined within Manage Kinetic. By default, all fields within a given
@@ -21,6 +23,8 @@ Once a data source is loaded, a table displaying the imported data source will b
 shown. This table represents the parsed and split data source. Each column is given
 a default heading such as "Column F0", "Column F1", and so on. These headings aren't
 representative of their column names from the import and are for reference only.
+
+### Mapping Tables
 
 Use the Table Mapping tab in the menu bar to open a "New Column Map" to begin mapping.
 This will create a new window which displays all the available columns. Select the
@@ -45,6 +49,26 @@ or empty. You can change this value to point to a different index for export.
 
 In order to save the column map, you must provide an alias name. Once saved, it will
 be available in the "Export Preview" tab on the main window.
+
+### Saving Table Schemas
+
+When creating table maps, you will probably want to save them to a file to load
+them up at a later time. To do this, use the Table Mapping tab in the menu bar,
+select "Save Map" or "Load Map". Doing this will overwrite any existing maps you
+have currently open. Saving a map may overwrite a map of an existing name, so
+use unique names for each map.
+
+### Exporting
+
+Once you have built a map and are ready to export to Excel, go to the menu bar and
+select File and then Export As. This dialogue will bring up a prompt to type in
+the name of the file. This file name will *not* reflect the file name of the output,
+but rather the base file name. When Manage Kinetic exports to excel, it will append
+a number which represents the subtable splits.
+
+Once you have selected a file name and hit okay, a popup will come up showing the
+export progress. This will take some time so please be patient. Once it is complete,
+you will find the excel documents in the location which you saved it.
 
 ## Build Manage Kinetic
 
