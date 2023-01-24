@@ -132,3 +132,31 @@ sourceFileOpen(void* buffer, ui64 buffersize, std::string filepath, ui64 fileSiz
 	CloseHandle(fileHandle);
 	return totalBytesRead;
 }
+
+/**
+ * Opens a file, then dumps the contents of the buffer into it and then closes.
+ * 
+ * @param buffer The region to dump to file.
+ * @param buffersize The size of the buffer.
+ * @param filepath The filepath to save the file to.
+ * 
+ * @returns A non-zero number if it succeeded, usually the bytes written, otherwise
+ * 0 bytes if the function failed to write the requested size or failed on open.
+ */
+ui64
+sourceFileSave(void* buffer, ui64 buffersize, std::string filepath)
+{
+
+	HANDLE fileHandle = CreateFileA(filepath.c_str(), GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ,
+		NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (fileHandle == INVALID_HANDLE_VALUE) return 0;
+
+	DWORD bytesWritten = 0;
+	WriteFile(fileHandle, buffer, (ui32)buffersize, &bytesWritten, NULL);
+	CloseHandle(fileHandle);
+	if (bytesWritten == 0 || bytesWritten != buffersize)
+		return 0;
+	else
+		return bytesWritten;
+
+}

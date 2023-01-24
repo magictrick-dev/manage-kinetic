@@ -99,22 +99,9 @@ createRecord()
 void tablemap::
 insertColumn(ui64 columnIndex)
 {
-
-	application::get().currentDocument->lockTable();
-
-	//std::stringstream headingss = {};
-	//headingss << "Column F" << this->fields.size() - 1;
-	//this->parentTable->headings.push_back(headingss.str());
-
 	std::stringstream columnName = {};
 	columnName << "Column F" << columnIndex;
-
 	this->columns.push_back(columnName.str());
-	
-
-	application::get().currentDocument->unlockTable();
-
-
 }
 
 std::shared_ptr<subtable> tablemap::
@@ -243,7 +230,11 @@ insertField(std::string value)
 	currentField.values.emplace_back(sbuffer);
 
 	if (this->fields.size() > this->parentTable->columns.size())
+	{
+		this->parentTable->columns_name_lock.lock();
 		this->parentTable->insertColumn(this->fields.size() - 1);
+		this->parentTable->columns_name_lock.unlock();
+	}
 
 	return currentField;
 
@@ -264,7 +255,11 @@ insertMultivalueField(std::vector<std::string> values)
 	}
 
 	if (this->fields.size() > this->parentTable->columns.size())
+	{
+		this->parentTable->columns_name_lock.lock();
 		this->parentTable->insertColumn(this->fields.size() - 1);
+		this->parentTable->columns_name_lock.unlock();
+	}
 
 	return currentField;
 

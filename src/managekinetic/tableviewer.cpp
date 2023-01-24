@@ -290,7 +290,7 @@ headerProcedure(ui32 columnOffset, ui32 colCount)
 
 	for (ui32 cIndex = columnOffset; cIndex < headings.size(); ++cIndex)
 	{
-		if (++columnsShown >= colCount - 1) break;
+		if (++columnsShown >= colCount) break;
 		ImGui::TableSetupColumn(headings[cIndex].c_str());
 	}
 

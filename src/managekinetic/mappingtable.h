@@ -94,6 +94,39 @@ class subtable
 		friend record;
 };
 
+struct __string_offset
+{
+	ui64 offset_location;
+	ui64 string_size;
+};
+
+/**
+ * When exporting a map, we need a format that can translate to binary. Unfortunately,
+ * std::string does not support this feature and we will need to manually append
+ * these out to a file.
+ */
+#pragma pack(push, 1)
+#define COLUMN_MAP_VERSION_1 "MTV1"
+struct __serialize_column_map_v1
+{
+	struct meta
+	{
+		char 	header[8] = COLUMN_MAP_VERSION_1;
+		ui64 	next; // A value of 0 indicates no next, any positive indicates where
+					  // The next values are located.
+	} meta;
+
+	
+	ui64 	column_index;
+	i32 	multivalue_index;
+	bool 	all_multivalues;
+	__string_offset 	multivalue_delim;
+	__string_offset 	export_alias;
+
+
+};
+#pragma pack(pop)
+
 struct column_map
 {
 	ui64 		column_index;
@@ -137,6 +170,7 @@ class tablemap
 		const ui32 maxRecordsPerSubtable;
 		std::vector<std::shared_ptr<subtable>> subtables;
 
+		std::mutex columns_name_lock;
 		std::vector<std::string> columns;
 		std::vector<column_map> mapped_columns;
 
