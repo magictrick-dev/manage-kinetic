@@ -14,9 +14,11 @@
  * -----------------------------------------------------------------------------
  * Todos   &   Bugs
  * -----------------------------------------------------------------------------
- * 		* Implement saving/loading maps. Serialize the structure.
+ * 		//* Implement saving/loading maps. Serialize the structure.
  * 		* Implement editor of current maps.
- * 		* Fix race condition bug on columns being appended. (Happens rarely)
+ * 		* Prevent mapping of duplicated names.
+ * 		
+ * 		* MAYBE FIXED? Fix race condition bug on columns being appended. (Happens rarely)
  * 
  * 		* Optionally allow for exclusion rules to exclude records from export.
  * 		* Optionally implement procedures to remap field data during export.

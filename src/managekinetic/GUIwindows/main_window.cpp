@@ -189,16 +189,49 @@ displaySubmenuTableMapping()
 		ImGui::Spacing();
 
 		// Disable save if there are no mapped columns.
-		bool saveTablemapDisabled = false;
+		bool nomapsDisable = false;
 		if (application::get().currentDocument->getTable().getMappedColumns().size() == 0)
-			saveTablemapDisabled = true;
-		if (saveTablemapDisabled == true) ImGui::BeginDisabled();
+			nomapsDisable = true;
+		if (nomapsDisable == true) ImGui::BeginDisabled();
 		if (ImGui::MenuItem("Save Tablemap Schema"))
 			this->saveMappingSchema();
-		if (saveTablemapDisabled == true) ImGui::EndDisabled();
+		if (nomapsDisable == true) ImGui::EndDisabled();
 
 		if (ImGui::MenuItem("Load Tablemap Schema"))
 			this->loadMappingSchema();
+
+		if (nomapsDisable == true) ImGui::BeginDisabled();
+		if (ImGui::BeginMenu("Edit Maps"))
+		{
+
+			if (ImGui::BeginListBox("Select Map"))
+			{
+
+				std::vector<column_map>& maps = application::get().currentDocument->getTable().getMappedColumns();
+				for (ui64 i = 0; i < maps.size(); ++i)
+				{
+
+					bool is_selected = (this->selected_mapping_index == i);
+
+				}
+#if 0
+				for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+				{
+					const bool is_selected = (item_current_idx == n);
+					if (ImGui::Selectable(items[n], is_selected))
+						item_current_idx = n;
+
+					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+#endif
+				ImGui::EndListBox();
+			}
+
+			ImGui::EndMenu();
+		}
+		if (nomapsDisable == true) ImGui::EndDisabled();
 
 		ImGui::EndMenu();
 	}
