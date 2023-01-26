@@ -4,18 +4,18 @@ MappingWindow::
 MappingWindow()
 	: GUIWindow(true), previewTable("Preview Table")
 {
+	this->column_map_edit_index = -1; // A new map.
 	map.column_index = -1;
 	map.all_multivalues = false;
 	map.multivalue_index = 1;
 }
 
 MappingWindow::
-MappingWindow(ui64 selectedIndex)
+MappingWindow(column_map map, ui64 edit_index)
 	: GUIWindow(true), previewTable("Preview Table")
 {
-	map.column_index = selectedIndex;
-	map.all_multivalues = false;
-	map.multivalue_index = 1;
+	this->column_map_edit_index = edit_index; // A new map.
+	this->map = map;
 }
 
 MappingWindow::
@@ -156,7 +156,14 @@ onDisplay()
 	if (ImGui::Button("Save Map"))
 	{
 		currentDocument.lockTable();
-		currentDocument.getTable().getMappedColumns().push_back(this->map);
+		if (this->column_map_edit_index == -1)
+		{
+			currentDocument.getTable().getMappedColumns().push_back(this->map);
+		}
+		else
+		{
+			currentDocument.getTable().getMappedColumns()[this->column_map_edit_index] = this->map;
+		}
 		currentDocument.unlockTable();
 		stayOpen = false; // Saved, we can close this window.
 	}

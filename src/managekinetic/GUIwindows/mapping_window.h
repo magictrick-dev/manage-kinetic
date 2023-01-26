@@ -89,7 +89,7 @@ class MappingWindow : public GUIWindow
 {
 	public:
 		MappingWindow();
-		MappingWindow(ui64 selectedIndex);
+		MappingWindow(column_map map, ui64 edit_index);
 		~MappingWindow();
 
 	protected:
@@ -100,6 +100,7 @@ class MappingWindow : public GUIWindow
 	private:
 		column_map map;
 		MappingWindowPreviewTable previewTable;
+		ui64 column_map_edit_index = -1;
 };
 
 #endif
