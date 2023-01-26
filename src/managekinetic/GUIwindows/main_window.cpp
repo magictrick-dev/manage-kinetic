@@ -189,16 +189,67 @@ displaySubmenuTableMapping()
 		ImGui::Spacing();
 
 		// Disable save if there are no mapped columns.
-		bool saveTablemapDisabled = false;
+		bool nomapsDisable = false;
 		if (application::get().currentDocument->getTable().getMappedColumns().size() == 0)
-			saveTablemapDisabled = true;
-		if (saveTablemapDisabled == true) ImGui::BeginDisabled();
+			nomapsDisable = true;
+		if (nomapsDisable == true) ImGui::BeginDisabled();
 		if (ImGui::MenuItem("Save Tablemap Schema"))
 			this->saveMappingSchema();
-		if (saveTablemapDisabled == true) ImGui::EndDisabled();
+		if (nomapsDisable == true) ImGui::EndDisabled();
 
 		if (ImGui::MenuItem("Load Tablemap Schema"))
 			this->loadMappingSchema();
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		if (nomapsDisable == true) ImGui::BeginDisabled();
+		if (ImGui::BeginMenu("Edit Maps", !nomapsDisable))
+		{
+
+			if (ImGui::BeginCombo("##mapselector", "Select a Map to Edit"))
+			{
+				
+				// Reset.
+				this->selected_mapping_index = -1;
+
+				std::vector<column_map>& maps = application::get().currentDocument->getTable().getMappedColumns();
+				for (ui64 i = 0; i < maps.size(); ++i)
+				{
+
+					bool is_selected = (this->selected_mapping_index == i);
+					if (ImGui::Selectable(maps[i].export_alias.c_str(), is_selected))
+						this->selected_mapping_index = i;
+
+				}
+
+				if (this->selected_mapping_index != -1)
+				{
+					printf("[ Main Thread ] : Selected to edit %lld.", this->selected_mapping_index);
+					application::get().mappingWindows.push_back(std::make_unique<MappingWindow>(
+						maps[this->selected_mapping_index], this->selected_mapping_index
+					));
+				}
+
+#if 0
+				for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+				{
+					const bool is_selected = (item_current_idx == n);
+					if (ImGui::Selectable(items[n], is_selected))
+						item_current_idx = n;
+
+					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+#endif
+				ImGui::EndCombo();
+			}
+
+			ImGui::EndMenu();
+		}
+		if (nomapsDisable == true) ImGui::EndDisabled();
 
 		ImGui::EndMenu();
 	}

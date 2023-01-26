@@ -97,6 +97,8 @@ class MainWindow : public GUIWindow
 		tableviewer rawViewTable;
 		ExportPreviewTable exportPreview;
 
+		ui64 selected_mapping_index = -1;
+
 };
 
 #endif
